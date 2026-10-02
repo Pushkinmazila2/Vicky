@@ -1,0 +1,43 @@
+services:
+  vicky:
+    build:
+      context: ./src
+      dockerfile: Dockerfile
+
+    container_name: vicky
+
+    restart: unless-stopped
+
+    env_file:
+      - .env
+
+    environment:
+      HOST: 0.0.0.0
+      HTTP_PORT: 8008
+      VICKY_RUNTIME_TOPOLOGY: single-process-local
+
+      # Persistent application state
+      WIKI_STORE_FILE_PATH: /vicky-data/wiki-store.json
+      WIKI_SSL_STORAGE_DIR: /vicky-data/ssl
+      WIKI_ANALYTICS_DB_PATH: /vicky-data/wiki-analytics.sqlite
+      AUTH_LOGIN_DB_PATH: /vicky-data/login-rate-limit.sqlite
+
+      # RAM-only caches
+      WIKI_MARKDOWN_CACHE_DIR: /vicky-cache/markdown-cache
+      WIKI_DOCS_SNAPSHOT_DIR: /vicky-cache/docs-cache
+      WIKI_TRANSLATION_CACHE_DIR: /vicky-cache/translation-cache
+
+    ports:
+      - "8008:8008"
+
+    volumes:
+      - vicky-data:/vicky-data
+
+    tmpfs:
+      - /vicky-cache:size=512m,mode=700
+
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  vicky-data:
