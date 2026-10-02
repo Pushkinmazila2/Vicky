@@ -3,44 +3,42 @@ services:
     build:
       context: .
       dockerfile: src/Dockerfile
-
     container_name: vicky
-
     restart: unless-stopped
-
     env_file:
       - .env
-
     environment:
       HOST: 0.0.0.0
       HTTP_PORT: 8008
       VICKY_RUNTIME_TOPOLOGY: single-process-local
-      VICKY_DIRECT_REQUEST_PROTOCOL: "http"
-      VICKY_APP_URL: "http://localhost:8008"
-      NEXTAUTH_URL: "http://localhost:8008"
-
-      # Persistent application state
+      
+      # Переменные путей оставляем как у вас
       WIKI_STORE_FILE_PATH: /vicky-data/wiki-store.json
       WIKI_SSL_STORAGE_DIR: /vicky-data/ssl
       WIKI_ANALYTICS_DB_PATH: /vicky-data/wiki-analytics.sqlite
       AUTH_LOGIN_DB_PATH: /vicky-data/login-rate-limit.sqlite
-
-      # RAM-only caches
       WIKI_MARKDOWN_CACHE_DIR: /vicky-cache/markdown-cache
       WIKI_DOCS_SNAPSHOT_DIR: /vicky-cache/docs-cache
       WIKI_TRANSLATION_CACHE_DIR: /vicky-cache/translation-cache
 
-    ports:
-      - "8008:8008"
-
+    # ПОРТЫ ЗДЕСЬ БОЛЬШЕ НЕ НУЖНЫ, Vicky общается с Nginx во внутренней сети Docker
     volumes:
       - vicky-data:/vicky-data
-
     tmpfs:
       - /vicky-cache:size=512m,mode=700
-
     security_opt:
       - no-new-privileges:true
+
+  nginx:
+    image: nginx:alpine
+    container_name: vicky-proxy
+    restart: unless-stopped
+    ports:
+      - "80:80" # Открываем стандартный HTTP порт наружу
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - vicky # Ждем запуска основного приложения
 
 volumes:
   vicky-data:
