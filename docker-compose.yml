@@ -15,6 +15,7 @@ services:
       HOST: 0.0.0.0
       HTTP_PORT: 8008
       VICKY_RUNTIME_TOPOLOGY: single-process-local
+      VICKY_DIRECT_REQUEST_PROTOCOL: "http"
 
       # Persistent application state
       WIKI_STORE_FILE_PATH: /vicky-data/wiki-store.json
