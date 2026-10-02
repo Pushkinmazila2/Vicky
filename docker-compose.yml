@@ -2,7 +2,7 @@ services:
   vicky:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: /src/Dockerfile
 
     container_name: vicky
     restart: unless-stopped
