@@ -1,7 +1,7 @@
 services:
   vicky:
     build:
-      context: ./src
+      context: .
       dockerfile: Dockerfile
 
     container_name: vicky
