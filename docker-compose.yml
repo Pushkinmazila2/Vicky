@@ -16,6 +16,8 @@ services:
       HTTP_PORT: 8008
       VICKY_RUNTIME_TOPOLOGY: single-process-local
       VICKY_DIRECT_REQUEST_PROTOCOL: "http"
+      VICKY_APP_URL: "http://localhost:8008"
+      NEXTAUTH_URL: "http://localhost:8008"
 
       # Persistent application state
       WIKI_STORE_FILE_PATH: /vicky-data/wiki-store.json
