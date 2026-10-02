@@ -22,6 +22,6 @@ ENV VICKY_RUNTIME_TOPOLOGY=single-process-local
 
 COPY --from=builder /app ./
 
-EXPOSE 3000
+EXPOSE 8008
 
 CMD ["npm", "run", "start"]
