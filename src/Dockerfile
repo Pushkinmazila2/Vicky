@@ -18,7 +18,7 @@ COPY postcss.config* ./
 
 COPY middleware.[jt]s* ./
 
-COPY src/ ./src
+COPY . .
 
 RUN npm run build
 
