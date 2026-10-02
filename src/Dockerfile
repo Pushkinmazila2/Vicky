@@ -7,9 +7,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     make \
     g++ \
     && rm -rf /var/lib/apt/lists/*
-    
-COPY package*.json ./
 
+COPY package*.json ./
 RUN npm ci
 
 COPY tsconfig*.json ./
@@ -17,10 +16,11 @@ COPY next.config* ./
 COPY tailwind.config* ./
 COPY postcss.config* ./
 
+COPY middleware.[jt]s* ./
+
 COPY src/ ./src
 
 RUN npm run build
-
 
 FROM node:20-bookworm-slim AS runtime
 
