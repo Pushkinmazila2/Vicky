@@ -11,6 +11,7 @@ const wikiJsCompatibilityRedirects = [
 ];
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   serverExternalPackages: ["better-sqlite3"],
   turbopack: {},
   webpack(config, { dev, isServer }) {
