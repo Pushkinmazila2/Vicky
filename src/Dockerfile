@@ -50,8 +50,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/node_modules/file-uri-to-path ./n
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
 
-# ВАЖНО: Делаем копию server.js с расширением .mjs, чтобы удовлетворить условие Vicky
-RUN cp server.js server.mjs && chown nextjs:nodejs server.mjs
+# ВАЖНО: Вместо копирования создаем валидный .mjs файл-прокси, 
+# который безопасно импортирует оригинальный CommonJS сервер.
+RUN echo "import { createRequire } from 'module'; const require = createRequire(import.meta.url); require('./server.js');" > server.mjs && \
+    chown nextjs:nodejs server.mjs
 
 USER nextjs
 
