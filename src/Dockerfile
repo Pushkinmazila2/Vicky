@@ -32,6 +32,11 @@ ENV PORT=8008
 ENV HTTP_PORT=8008
 ENV VICKY_RUNTIME_TOPOLOGY=single-process-local
 
+# ЭМУЛЯЦИЯ NPM ОКРУЖЕНИЯ: Передаем переменные, которые жестко проверяет скрипт аренды Vicky
+ENV npm_lifecycle_event=start
+ENV npm_lifecycle_script="node server.mjs"
+ENV INIT_CWD=/app
+
 # Безопасность: работаем не из-под root
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
@@ -41,19 +46,17 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
-# 2. Копируем скомпилированный better-sqlite3 и его зависимости
+# 2. Копируем скомпилированный better-sqlite3, @next/env и зависимости
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/better-sqlite3 ./node_modules/better-sqlite3
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/bindings ./node_modules/bindings
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/file-uri-to-path ./node_modules/file-uri-to-path
-
-# 3. ВАЖНО: Копируем модуль окружения Next.js, который требуется для скрипта start-next.mjs
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@next/env ./node_modules/@next/env
 
-# 4. Возвращаем package.json и скрипты автоматизации фреймворка Vicky
+# 3. Возвращаем package.json и скрипты автоматизации фреймворка Vicky
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
 
-# Создаем валидный .mjs файл-прокси для запуска standalone сервера
+# Создаем .mjs файл-прокси для корректного CommonJS импорта
 RUN echo "import { createRequire } from 'module'; const require = createRequire(import.meta.url); require('./server.js');" > server.mjs && \
     chown nextjs:nodejs server.mjs
 
@@ -61,4 +64,5 @@ USER nextjs
 
 EXPOSE 8008
 
+# Запускаем через npm, чтобы корневой процесс соответствовал ожиданиям Vicky
 CMD ["npm", "run", "start"]
