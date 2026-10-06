@@ -46,12 +46,14 @@ COPY --from=builder --chown=nextjs:nodejs /app/node_modules/better-sqlite3 ./nod
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/bindings ./node_modules/bindings
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/file-uri-to-path ./node_modules/file-uri-to-path
 
-# 3. Возвращаем package.json и скрипты автоматизации фреймворка Vicky
+# 3. ВАЖНО: Копируем модуль окружения Next.js, который требуется для скрипта start-next.mjs
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@next/env ./node_modules/@next/env
+
+# 4. Возвращаем package.json и скрипты автоматизации фреймворка Vicky
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
 
-# ВАЖНО: Вместо копирования создаем валидный .mjs файл-прокси, 
-# который безопасно импортирует оригинальный CommonJS сервер.
+# Создаем валидный .mjs файл-прокси для запуска standalone сервера
 RUN echo "import { createRequire } from 'module'; const require = createRequire(import.meta.url); require('./server.js');" > server.mjs && \
     chown nextjs:nodejs server.mjs
 
@@ -59,4 +61,4 @@ USER nextjs
 
 EXPOSE 8008
 
-CMD ["npm", "run", "start:next"]
+CMD ["npm", "run", "start"]
