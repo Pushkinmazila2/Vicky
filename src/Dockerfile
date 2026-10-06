@@ -46,13 +46,15 @@ COPY --from=builder --chown=nextjs:nodejs /app/node_modules/better-sqlite3 ./nod
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/bindings ./node_modules/bindings
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/file-uri-to-path ./node_modules/file-uri-to-path
 
-# 3. ВАЖНО: Возвращаем package.json и скрипты автоматизации фреймворка Vicky
+# 3. Возвращаем package.json и скрипты автоматизации фреймворка Vicky
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
+
+# ВАЖНО: Делаем копию server.js с расширением .mjs, чтобы удовлетворить условие Vicky
+RUN cp server.js server.mjs && chown nextjs:nodejs server.mjs
 
 USER nextjs
 
 EXPOSE 8008
 
-# Возвращаем запуск через npm, так как экосистема Vicky требует этого для lease-менеджмента
 CMD ["npm", "run", "start"]
