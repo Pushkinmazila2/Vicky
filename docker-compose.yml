@@ -21,6 +21,9 @@ services:
       WIKI_MARKDOWN_CACHE_DIR: /vicky-cache/markdown-cache
       WIKI_DOCS_SNAPSHOT_DIR: /vicky-cache/docs-cache
       WIKI_TRANSLATION_CACHE_DIR: /vicky-cache/translation-cache
+      AUTH_JWT_SECRET: ${AUTH_JWT_SECRET:?Ошибка! Переменная AUTH_JWT_SECRET обязательна для заполнения}
+      ENCRYPTION_SECRET: ${ENCRYPTION_SECRET:?Ошибка! Переменная ENCRYPTION_SECRET обязательна для заполнения}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Ошибка! Переменная ADMIN_PASSWORD обязательна для заполнения}
 
     expose:
       - "8008"
