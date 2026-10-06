@@ -46,13 +46,13 @@ COPY --from=builder --chown=nextjs:nodejs /app/node_modules/better-sqlite3 ./nod
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/bindings ./node_modules/bindings
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/file-uri-to-path ./node_modules/file-uri-to-path
 
-# 3. ВАЖНО: Возвращаем package.json для того, чтобы работал npm lifecycle
+# 3. ВАЖНО: Возвращаем package.json и скрипты автоматизации фреймворка Vicky
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
+COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
 
 USER nextjs
 
 EXPOSE 8008
 
-# Запускаем через node, но эмулируем npm lifecycle, если приложение проверяет его.
-# Если это не сработает, переключите CMD на вариант ниже.
-CMD ["npm", "run", "start:next"] 
+# Возвращаем запуск через npm, так как экосистема Vicky требует этого для lease-менеджмента
+CMD ["npm", "run", "start"]
