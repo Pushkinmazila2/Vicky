@@ -1,7 +1,8 @@
-# --- Этап 1: Установка и сборка зависимостей ---
-FROM node:20-bookworm-slim AS deps
+# --- Этап 1: Сборка приложения и установка ВСЕХ зависимостей ---
+FROM node:20-bookworm-slim AS builder
 WORKDIR /app
 
+# Устанавливаем системные зависимости для сборки бинарников (better-sqlite3)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     make \
@@ -11,18 +12,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY package*.json ./
 RUN npm ci
 
-# --- Этап 2: Сборка Next.js приложения ---
-FROM node:20-bookworm-slim AS builder
-WORKDIR /app
-
-COPY --from=deps /app/node_modules ./node_modules
+# Копируем исходный код
 COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
-
+# Собираем продакшен-билд (next build)
 RUN npm run build
 
-# --- Этап 3: Финальный продакшен-образ ---
+# ВАЖНО: Удаляем все devDependencies (TS, ESLint, Tailwind CLI и т.д.), 
+# оставляя только бинарники и продакшен-пакеты.
+RUN npm prune --production
+
+# --- Этап 2: Финальный легковесный продакшен-образ ---
 FROM node:20-bookworm-slim AS runtime
 WORKDIR /app
 
@@ -32,37 +33,24 @@ ENV PORT=8008
 ENV HTTP_PORT=8008
 ENV VICKY_RUNTIME_TOPOLOGY=single-process-local
 
-# ЭМУЛЯЦИЯ NPM ОКРУЖЕНИЯ: Передаем переменные, которые жестко проверяет скрипт аренды Vicky
-ENV npm_lifecycle_event=start
-ENV npm_lifecycle_script="node server.mjs"
-ENV INIT_CWD=/app
-
 # Безопасность: работаем не из-под root
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
-# 1. Копируем ядро standalone-сервера и статику
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/public ./public
-
-# 2. Копируем скомпилированный better-sqlite3, @next/env и зависимости
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/better-sqlite3 ./node_modules/better-sqlite3
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/bindings ./node_modules/bindings
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/file-uri-to-path ./node_modules/file-uri-to-path
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@next/env ./node_modules/@next/env
-
-# 3. Возвращаем package.json и скрипты автоматизации фреймворка Vicky
+# Копируем очищенные node_modules, сборку .next, package.json и абсолютно все скрипты
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
 
-# Создаем .mjs файл-прокси для корректного CommonJS импорта
-RUN echo "import { createRequire } from 'module'; const require = createRequire(import.meta.url); require('./server.js');" > server.mjs && \
-    chown nextjs:nodejs server.mjs
+# Копируем конфигурационные файлы (часто проверяются кастомными скриптами запуска)
+COPY --from=builder --chown=nextjs:nodejs /app/next.config.* ./
+COPY --from=builder --chown=nextjs:nodejs /app/tsconfig*.json ./
 
 USER nextjs
 
 EXPOSE 8008
 
-# Запускаем через npm, чтобы корневой процесс соответствовал ожиданиям Vicky
+# Возвращаем оригинальную команду запуска, которая работала в самом начале
 CMD ["npm", "run", "start"]
