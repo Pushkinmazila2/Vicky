@@ -12,7 +12,11 @@ COPY . .
 RUN npm run build \
     && npm prune --omit=dev \
     && npm cache clean --force \
-    && rm -rf .next/cache
+    && rm -rf .next/cache .next/standalone \
+    && find .next -name '*.map' -delete \
+    && rm -rf node_modules/better-sqlite3/deps node_modules/better-sqlite3/src \
+              node_modules/better-sqlite3/build/Release/obj \
+              node_modules/better-sqlite3/build/Release/.deps
 
 FROM node:20-bookworm-slim AS runtime
 WORKDIR /app
