@@ -1,8 +1,7 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 make g++ \
+RUN apk add --no-cache python3 make g++ \
     && rm -rf /var/lib/apt/lists/*
 
 COPY package*.json ./
